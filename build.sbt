@@ -18,7 +18,8 @@ resourceDirectory in Test    <<= baseDirectory(_ / "fixtures")
 
 libraryDependencies ++= Seq(
   "io.monix" %% "monix-reactive" % "2.1.2",
-  "org.scalafx" %% "scalafx" % "8.0.102-R11"
+  "org.scalafx" %% "scalafx" % "8.0.102-R11",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 
 fork := true // Avoid problems with JavaFX double initalization

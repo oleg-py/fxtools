@@ -3,7 +3,7 @@ package fx.tools.reactive
 import javafx.collections.ObservableList
 
 import scalafx.application.Platform.runLater
-import scalafx.beans.property.{ObjectProperty, Property}
+import scalafx.beans.property.{ObjectProperty, Property, ReadOnlyObjectProperty, ReadOnlyProperty}
 
 import fx.tools.internal.NotSubclass._
 import monix.execution.CancelableFuture
@@ -56,7 +56,11 @@ object syntax {
         }
       }
     }
+  }
 
+  implicit class PropertyToObservableSyntax[Prop, A]
+  (self: Prop)
+  (implicit isProp: Prop => ReadOnlyProperty[A, _]) {
     def observe(): Observable[A] = {
       val subj = BehaviorSubject[A](self())
       self.onChange {
@@ -68,7 +72,7 @@ object syntax {
   }
 
   implicit class ObservableToPropertySyntax[A](observable: Observable[A]) {
-    def property(initial: A): ObjectProperty[A] = {
+    def property(initial: A): ReadOnlyObjectProperty[A] = {
       val prop = ObjectProperty[A](initial)
       observable.foreach(prop.update)
       prop
