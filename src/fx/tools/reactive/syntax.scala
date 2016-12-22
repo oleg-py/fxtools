@@ -18,25 +18,16 @@ import monix.reactive.Observable
 import monix.reactive.OverflowStrategy.Unbounded
 
 object syntax {
-  trait LowerPriorityColonEqSyntax[A] { self: PropertyToColonEqSyntax[A] =>
-    def :=[C](value: Observable[C])(implicit conv: C => A, ev: A ¬<:< Iterable[_]): Unit = {
-      this := value.map(conv)
-    }
-
-    def :=[B, C](value: Observable[_ <: Iterable[C]])(implicit conv: C => B, ev: A <:< ObservableList[B]): Unit = {
-      this := value.map(_.map(conv))
-    }
-  }
-
-  class PropertyToColonEqSyntax[A](self: Property[A, _]) extends LowerPriorityColonEqSyntax[A] {
-    def :=(value: Observable[A])(implicit ev: A ¬<:< Iterable[_]): Unit = {
-      bind(value)
+  class PropertyToColonEqSyntax[A](self: Property[A, _]) {
+    def :=[C](value: Observable[C])
+             (implicit ev: A ¬<:< Iterable[_], conv: C => A): Unit = {
+      bind(value.map(conv))
       ()
     }
 
-    def :=[B](value: Observable[_ <: Iterable[B]])
-             (implicit ev: A <:< ObservableList[B]): Unit = {
-      bindList(value)
+    def :=[B, C](value: Observable[Iterable[C]])
+                (implicit ev: A <:< ObservableList[B], conv: C => B): Unit = {
+      bindList(value.map(_.map(conv)))
       ()
     }
 
@@ -44,7 +35,7 @@ object syntax {
       for (a <- value) runLater { self() = a }
     }
 
-    def bindList[B](value: Observable[_ <: Iterable[B]])
+    def bindList[B](value: Observable[Iterable[B]])
                    (implicit ev: A <:< ObservableList[B]): CancelableFuture[Unit] = {
       for (seq <- value) runLater {
         val ol = ev(self())
