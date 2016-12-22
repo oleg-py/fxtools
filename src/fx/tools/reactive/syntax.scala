@@ -17,14 +17,16 @@ import monix.reactive.Observable
 import monix.reactive.OverflowStrategy.Unbounded
 
 object syntax {
-  class PropertyToColonEqSyntax[A](self: Property[A, _]) {
+  trait LowerPriorityColonEqSyntax[A] { self: PropertyToColonEqSyntax[A] =>
+    def :=[C](value: Observable[C])(implicit conv: C => A, ev: A ¬<:< Iterable[_]): Unit = {
+      this := value.map(conv)
+    }
+  }
+
+  class PropertyToColonEqSyntax[A](self: Property[A, _]) extends LowerPriorityColonEqSyntax[A] {
     def :=(value: Observable[A])(implicit ev: A ¬<:< Iterable[_]): Unit = {
       bind(value)
       ()
-    }
-
-    def :=[C](value: Observable[C])(implicit conv: C => A): Unit = {
-      this := value.map(conv)
     }
 
     def :=[B](value: Observable[_ <: Iterable[B]])

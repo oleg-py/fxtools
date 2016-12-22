@@ -9,6 +9,7 @@ class ObservableListSpec extends FlatSpec with Matchers {
     """
        import javafx.collections.ObservableList
        import monix.reactive.Observable
+       import scalafx.Includes._ // unused, but should NOT cause conflicts
        import fx.tools.reactive.syntax._
 
        val ol: ObservableList[String] = null
@@ -23,6 +24,7 @@ class ObservableListSpec extends FlatSpec with Matchers {
       import javafx.beans.property.ObjectProperty
       import javafx.collections.ObservableList
       import monix.reactive.Observable
+      import scalafx.Includes._ // unused, but should NOT cause conflicts
       import fx.tools.reactive.syntax._
 
       val ol: ObjectProperty[ObservableList[String]] = null

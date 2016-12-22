@@ -34,8 +34,6 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
-  //  "-Xfatal-warnings",
   "-Xlint",
-  "-Xfuture",
-  "-Ywarn-unused-import"
+  "-Xfuture"
 )
