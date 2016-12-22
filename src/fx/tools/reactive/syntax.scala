@@ -1,23 +1,25 @@
 package fx.tools.reactive
 
+import javafx.beans.{value => jvalue}
+import javafx.beans.{property => jprop}
 import javafx.collections.ObservableList
 
+import scala.language.implicitConversions
+import scalafx.Includes._
 import scalafx.application.Platform.runLater
-import scalafx.beans.property.{ObjectProperty, Property, ReadOnlyObjectProperty, ReadOnlyProperty}
+import scalafx.beans.property.{ObjectProperty, Property, ReadOnlyObjectProperty}
+import scalafx.beans.value.ObservableValue
 
 import fx.tools.internal.NotSubclass._
-import monix.execution.CancelableFuture
+import monix.execution.{Cancelable, CancelableFuture}
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import monix.reactive.subjects.BehaviorSubject
+import monix.reactive.OverflowStrategy.Unbounded
 
 object syntax {
-  implicit class PropertyToObservableColonEqSyntax[Prop, A]
-  (self: Prop)
-  (implicit isProp: Prop => Property[A, _]) {
+  class PropertyToColonEqSyntax[A](self: Property[A, _]) {
 
-    def :=(value: Observable[A])
-          (implicit ev: A ¬<:< Iterable[_]): Unit = {
+    def :=(value: Observable[A])(implicit ev: A ¬<:< Iterable[_]): Unit = {
       bind(value)
       ()
     }
@@ -29,9 +31,7 @@ object syntax {
     }
 
     def bind(value: Observable[A]): CancelableFuture[Unit] = {
-      for (a <- value) runLater {
-        self() = a
-      }
+      for (a <- value) runLater { self() = a }
     }
 
     def bindList[B](value: Observable[_ <: Iterable[B]])
@@ -58,18 +58,33 @@ object syntax {
     }
   }
 
-  implicit class PropertyToObservableSyntax[Prop, A]
-  (self: Prop)
-  (implicit isProp: Prop => ReadOnlyProperty[A, _]) {
-    def observe(): Observable[A] = {
-      val subj = BehaviorSubject[A](self())
+  implicit def sfxObservableValueToColonEqSyntax[A]      (self: Property[A, _]         ): PropertyToColonEqSyntax[A]       = new PropertyToColonEqSyntax[A](self)
+  implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.BooleanProperty  ): PropertyToColonEqSyntax[Boolean] = new PropertyToColonEqSyntax(self)
+  implicit def jfxObservableIntValueToColonEqSyntax      (self: jprop.IntegerProperty  ): PropertyToColonEqSyntax[Int]     = new PropertyToColonEqSyntax(self)
+  implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.DoubleProperty   ): PropertyToColonEqSyntax[Double]  = new PropertyToColonEqSyntax(self)
+  implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.FloatProperty    ): PropertyToColonEqSyntax[Float]   = new PropertyToColonEqSyntax(self)
+  implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.LongProperty     ): PropertyToColonEqSyntax[Long]    = new PropertyToColonEqSyntax(self)
+
+
+  class PropertyToObserveSyntax[A](val self: ObservableValue[A, _]) extends AnyVal {
+
+    def observe(): Observable[A] = Observable.create(Unbounded) { sub =>
+      sub.onNext(self.value)
       self.onChange {
-        subj.onNext(self())
+        sub.onNext(self.value)
         ()
       }
-      subj
+      Cancelable()
     }
   }
+
+  implicit def sfxObservableValueToObserveSyntax[A]      (self: ObservableValue[A, _]          ): PropertyToObserveSyntax[A]       = new PropertyToObserveSyntax[A](self)
+  implicit def jfxObservableObjectValueToObserveSyntax[A](self: jvalue.ObservableObjectValue[A]): PropertyToObserveSyntax[A]       = new PropertyToObserveSyntax(self)
+  implicit def jfxObservableBooleanValueToObserveSyntax  (self: jprop.ReadOnlyBooleanProperty  ): PropertyToObserveSyntax[Boolean] = new PropertyToObserveSyntax(self)
+  implicit def jfxObservableIntValueToObserveSyntax      (self: jprop.ReadOnlyIntegerProperty  ): PropertyToObserveSyntax[Int]     = new PropertyToObserveSyntax(self)
+  implicit def jfxObservableBooleanValueToObserveSyntax  (self: jprop.ReadOnlyDoubleProperty   ): PropertyToObserveSyntax[Double]  = new PropertyToObserveSyntax(self)
+  implicit def jfxObservableBooleanValueToObserveSyntax  (self: jprop.ReadOnlyFloatProperty    ): PropertyToObserveSyntax[Float]   = new PropertyToObserveSyntax(self)
+  implicit def jfxObservableBooleanValueToObserveSyntax  (self: jprop.ReadOnlyLongProperty     ): PropertyToObserveSyntax[Long]    = new PropertyToObserveSyntax(self)
 
   implicit class ObservableToPropertySyntax[A](observable: Observable[A]) {
     def property(initial: A): ReadOnlyObjectProperty[A] = {
