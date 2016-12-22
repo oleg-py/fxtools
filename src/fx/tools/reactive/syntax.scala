@@ -1,7 +1,7 @@
 package fx.tools.reactive
 
-import javafx.beans.{value => jvalue}
-import javafx.beans.{property => jprop}
+import javafx.beans.{property => jprop, value => jvalue}
+import javafx.{collections => jcoll}
 import javafx.collections.ObservableList
 
 import scala.language.implicitConversions
@@ -18,10 +18,13 @@ import monix.reactive.OverflowStrategy.Unbounded
 
 object syntax {
   class PropertyToColonEqSyntax[A](self: Property[A, _]) {
-
     def :=(value: Observable[A])(implicit ev: A ¬<:< Iterable[_]): Unit = {
       bind(value)
       ()
+    }
+
+    def :=[C](value: Observable[C])(implicit conv: C => A): Unit = {
+      this := value.map(conv)
     }
 
     def :=[B](value: Observable[_ <: Iterable[B]])
@@ -30,7 +33,7 @@ object syntax {
       ()
     }
 
-    def bind(value: Observable[A]): CancelableFuture[Unit] = {
+    def bind[B](value: Observable[B])(implicit conv: B => A): CancelableFuture[Unit] = {
       for (a <- value) runLater { self() = a }
     }
 
@@ -59,11 +62,13 @@ object syntax {
   }
 
   implicit def sfxObservableValueToColonEqSyntax[A]      (self: Property[A, _]         ): PropertyToColonEqSyntax[A]       = new PropertyToColonEqSyntax[A](self)
+  implicit def jfxObjectPropertyToColonEqSyntax[A]       (self: jprop.ObjectProperty[A]): PropertyToColonEqSyntax[A]       = new PropertyToColonEqSyntax[A](self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.BooleanProperty  ): PropertyToColonEqSyntax[Boolean] = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableIntValueToColonEqSyntax      (self: jprop.IntegerProperty  ): PropertyToColonEqSyntax[Int]     = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.DoubleProperty   ): PropertyToColonEqSyntax[Double]  = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.FloatProperty    ): PropertyToColonEqSyntax[Float]   = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.LongProperty     ): PropertyToColonEqSyntax[Long]    = new PropertyToColonEqSyntax(self)
+  implicit def jfxObservableListToColonEqSyntax[A]       (self: jcoll.ObservableList[A]): PropertyToColonEqSyntax[ObservableList[A]]    = new PropertyToColonEqSyntax(ObjectProperty(self))
 
 
   class PropertyToObserveSyntax[A](val self: ObservableValue[A, _]) extends AnyVal {
