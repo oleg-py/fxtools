@@ -3,6 +3,7 @@ package fx.tools.reactive
 import javafx.beans.{property => jprop, value => jvalue}
 import javafx.{collections => jcoll}
 import javafx.collections.ObservableList
+import javafx.event.{Event, EventHandler}
 
 import scala.language.implicitConversions
 import scalafx.Includes._
@@ -21,6 +22,10 @@ object syntax {
     def :=[C](value: Observable[C])(implicit conv: C => A, ev: A ¬<:< Iterable[_]): Unit = {
       this := value.map(conv)
     }
+
+    def :=[B, C](value: Observable[_ <: Iterable[C]])(implicit conv: C => B, ev: A <:< ObservableList[B]): Unit = {
+      this := value.map(_.map(conv))
+    }
   }
 
   class PropertyToColonEqSyntax[A](self: Property[A, _]) extends LowerPriorityColonEqSyntax[A] {
@@ -35,7 +40,7 @@ object syntax {
       ()
     }
 
-    def bind[B](value: Observable[B])(implicit conv: B => A): CancelableFuture[Unit] = {
+    def bind(value: Observable[A]): CancelableFuture[Unit] = {
       for (a <- value) runLater { self() = a }
     }
 
@@ -100,4 +105,8 @@ object syntax {
       prop
     }
   }
+
+  // A special case for observables of handle { ... } because Java class has no variance
+  implicit def eventHandlerSubst[A <: Event](eh: EventHandler[Nothing]): EventHandler[A] =
+    eh.asInstanceOf[EventHandler[A]]
 }
