@@ -12,7 +12,7 @@ class ConversionSpec extends FlatSpec with Matchers {
        import scala.language.implicitConversions
 
        import monix.reactive.Observable
-       import fx.tools.reactive.syntax._
+       import fx.tools.monix._
 
        trait A
        trait B

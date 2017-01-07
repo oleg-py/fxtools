@@ -1,64 +1,20 @@
-package fx.tools.reactive
-
-import javafx.beans.{property => jprop, value => jvalue}
-import javafx.{collections => jcoll}
-import javafx.collections.ObservableList
-import javafx.event.{Event, EventHandler}
+package fx.tools
 
 import scala.language.implicitConversions
+
+import javafx.beans.{property => jprop, value => jvalue}
+import javafx.collections.ObservableList
+import javafx.event.{Event, EventHandler}
+import javafx.{collections => jcoll}
+
 import scalafx.Includes._
-import scalafx.application.Platform.runLater
 import scalafx.beans.property.{ObjectProperty, Property, ReadOnlyObjectProperty}
 import scalafx.beans.value.ObservableValue
 
-import fx.tools.internal.NotSubclass._
-import monix.execution.{Cancelable, CancelableFuture}
-import monix.execution.Scheduler.Implicits.global
-import monix.reactive.Observable
-import monix.reactive.OverflowStrategy.Unbounded
+import _root_.monix.execution.Scheduler.Implicits.global
+import _root_.monix.reactive.Observable
 
-object syntax {
-  class PropertyToColonEqSyntax[A](self: Property[A, _]) {
-    def :=[C](value: Observable[C])
-             (implicit ev: A ¬<:< Iterable[_], conv: C => A): Unit = {
-      bind(value.map(conv))
-      ()
-    }
-
-    def :=[B, C](value: Observable[Iterable[C]])
-                (implicit ev: A <:< ObservableList[B], conv: C => B): Unit = {
-      bindList(value.map(_.map(conv)))
-      ()
-    }
-
-    def bind(value: Observable[A]): CancelableFuture[Unit] = {
-      for (a <- value) runLater { self() = a }
-    }
-
-    def bindList[B](value: Observable[Iterable[B]])
-                   (implicit ev: A <:< ObservableList[B]): CancelableFuture[Unit] = {
-      for (seq <- value) runLater {
-        val ol = ev(self())
-        val iter = seq.iterator
-        var idx = 0
-        while (idx < ol.size && iter.hasNext) {
-          val el = iter.next()
-          if (el != ol.get(idx)) {
-            ol.set(idx, el)
-          }
-          idx += 1
-        }
-        while (iter.hasNext) {
-          ol.add(iter.next())
-          idx += 1
-        }
-        if (idx < ol.size) {
-          ol.remove(idx, ol.size())
-        }
-      }
-    }
-  }
-
+package object monix {
   implicit def sfxObservableValueToColonEqSyntax[A]      (self: Property[A, _]         ): PropertyToColonEqSyntax[A]       = new PropertyToColonEqSyntax[A](self)
   implicit def jfxObjectPropertyToColonEqSyntax[A]       (self: jprop.ObjectProperty[A]): PropertyToColonEqSyntax[A]       = new PropertyToColonEqSyntax[A](self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.BooleanProperty  ): PropertyToColonEqSyntax[Boolean] = new PropertyToColonEqSyntax(self)
@@ -67,19 +23,6 @@ object syntax {
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.FloatProperty    ): PropertyToColonEqSyntax[Float]   = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableBooleanValueToColonEqSyntax  (self: jprop.LongProperty     ): PropertyToColonEqSyntax[Long]    = new PropertyToColonEqSyntax(self)
   implicit def jfxObservableListToColonEqSyntax[A]       (self: jcoll.ObservableList[A]): PropertyToColonEqSyntax[ObservableList[A]]    = new PropertyToColonEqSyntax(ObjectProperty(self))
-
-
-  class PropertyToObserveSyntax[A](val self: ObservableValue[A, _]) extends AnyVal {
-
-    def observe(): Observable[A] = Observable.create(Unbounded) { sub =>
-      sub.onNext(self.value)
-      self.onChange {
-        sub.onNext(self.value)
-        ()
-      }
-      Cancelable()
-    }
-  }
 
   implicit def sfxObservableValueToObserveSyntax[A]      (self: ObservableValue[A, _]          ): PropertyToObserveSyntax[A]       = new PropertyToObserveSyntax[A](self)
   implicit def jfxObservableObjectValueToObserveSyntax[A](self: jvalue.ObservableObjectValue[A]): PropertyToObserveSyntax[A]       = new PropertyToObserveSyntax(self)

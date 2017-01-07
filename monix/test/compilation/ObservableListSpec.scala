@@ -10,7 +10,7 @@ class ObservableListSpec extends FlatSpec with Matchers {
        import javafx.collections.ObservableList
        import monix.reactive.Observable
        import scalafx.Includes._ // unused, but should NOT cause conflicts
-       import fx.tools.reactive.syntax._
+       import fx.tools.monix._
 
        val ol: ObservableList[String] = null
        ol := Observable(Seq("1"), Seq("1", "2", "3"), Seq("Oh, screw that"))
@@ -25,7 +25,7 @@ class ObservableListSpec extends FlatSpec with Matchers {
       import javafx.collections.ObservableList
       import monix.reactive.Observable
       import scalafx.Includes._ // unused, but should NOT cause conflicts
-      import fx.tools.reactive.syntax._
+      import fx.tools.monix._
 
       val ol: ObjectProperty[ObservableList[String]] = null
       ol := Observable(Seq("1"), Seq("1", "2", "3"), Seq("Oh, screw that"))

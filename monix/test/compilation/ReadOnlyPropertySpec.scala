@@ -9,7 +9,7 @@ class ReadOnlyPropertySpec extends FlatSpec with Matchers {
     """
        import monix.reactive._
        import scalafx.beans.property._
-       import fx.tools.reactive.syntax._
+       import fx.tools.monix._
 
        val prop: ReadOnlyObjectProperty[List[Int]] = ObjectProperty[List[Int]](Nil)
        val result: Observable[List[Int]] = prop.observe()
@@ -20,7 +20,7 @@ class ReadOnlyPropertySpec extends FlatSpec with Matchers {
     """
       import monix.reactive._
       import scalafx.beans.property._
-      import fx.tools.reactive.syntax._
+      import fx.tools.monix._
 
       val prop: ReadOnlyBooleanProperty = BooleanProperty(false)
       val result: Observable[Boolean] = prop.observe()
@@ -31,7 +31,7 @@ class ReadOnlyPropertySpec extends FlatSpec with Matchers {
     """
        import monix.reactive._
        import javafx.beans.property._
-       import fx.tools.reactive.syntax._
+       import fx.tools.monix._
 
        val prop: ReadOnlyObjectProperty[List[Int]] = new SimpleObjectProperty[List[Int]](Nil)
        val result: Observable[List[Int]] = prop.observe()
@@ -42,7 +42,7 @@ class ReadOnlyPropertySpec extends FlatSpec with Matchers {
     """
       import monix.reactive._
       import javafx.beans.property._
-      import fx.tools.reactive.syntax._
+      import fx.tools.monix._
 
       val prop: ReadOnlyBooleanProperty = new SimpleBooleanProperty(false)
       val result: Observable[Boolean] = prop.observe()
