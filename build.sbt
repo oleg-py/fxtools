@@ -1,11 +1,16 @@
-lazy val fxtools  = project in file(".") aggregate (cats, monix, controls)
+lazy val fxtools  = project.
+  in (file(".")).
+  aggregate (cats, monix, controls).
+  dependsOn (cats % withTests, monix % withTests, controls % withTests)
+
+def withTests = "compile->compile;test->test"
 
 lazy val cats     = project.settings(commonSettings)
 lazy val monix    = project.settings(commonSettings)
 lazy val controls = project.settings(commonSettings)
 
 Project.inThisBuild(Seq(
-  version := "0.0.7",
+  version := "0.0.9",
   organization := "com.github.oleg-py",
   isSnapshot := true,
   scalaVersion := "2.11.8"
@@ -13,9 +18,8 @@ Project.inThisBuild(Seq(
 
 lazy val commonSettings = Seq(
   Seq(
-    moduleName ~= { name => s"fxtools-$name" },
+    moduleName ~= { "fxtools-" ++ _ },
     fork := true,
-    crossPaths := false,
 
     scalacOptions ++= Seq(
       "-target:jvm-1.8",
