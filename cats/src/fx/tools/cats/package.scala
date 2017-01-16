@@ -1,13 +1,12 @@
 package fx.tools
 
 import scala.language.implicitConversions
-
 import javafx.beans.{InvalidationListener, Observable}
 import javafx.beans.property.{ObjectProperty => JObjectProperty}
 import javafx.collections.ObservableList
-import javafx.event.{EventHandler, Event}
+import javafx.event.{Event, EventHandler}
 
-import scalafx.application.Platform
+import scala.annotation.tailrec
 import scalafx.beans.binding.Bindings
 import scalafx.beans.property.{ObjectProperty, Property}
 import scalafx.beans.value.ObservableValue
@@ -29,35 +28,27 @@ package object cats extends ObservableValueMType {
       }
 
       override def flatMap[A, B](fa: ObservableValueM[A])(f: (A) => ObservableValueM[B]): ObservableValueM[B] = {
-        var pb = f(fa())
-        val opb = ObjectProperty(pb())
-        fa onChange {
-          pb = f(fa())
-          opb() = pb()
-        }
-        pb onChange {
-          opb() = pb()
-        }
-        opb
-      }
+        var fb = f(fa())
+        val property = ObjectProperty(fb())
 
-      private def flatMapT[A, B](fa: ObservableValueM[A])(f: (A) => ObservableValueM[B]): ObservableValueM[B] = {
-        var pb = f(fa())
-        val opb = ObjectProperty(pb())
-        fa onChange {
-          pb = f(fa())
-          Platform.runLater {
-            opb() = pb()
+        val watchB = new InvalidationListener {
+          override def invalidated(observable: Observable): Unit = {
+            property() = fb()
           }
         }
-        pb onChange {
-          opb() = pb()
+        fb.addListener(watchB)
+
+        fa onChange {
+          fb.removeListener(watchB)
+          fb = f(fa())
+          fb.addListener(watchB)
+          property() = fb()
         }
-        opb
+        property
       }
 
-      override def tailRecM[A, B](a: A)(f: (A) => ObservableValueM[Either[A, B]]): ObservableValueM[B] = {
-        flatMapT(f(a)) {
+      @tailrec override def tailRecM[A, B](a: A)(f: (A) => ObservableValueM[Either[A, B]]): ObservableValueM[B] = {
+        f(a)() match {
           case Right(b) => pure(b)
           case Left(nextA) => tailRecM(nextA)(f)
         }
@@ -68,9 +59,14 @@ package object cats extends ObservableValueMType {
       }
     }
 
+  implicit def regularObservableToAllMonadOps[A, J]
+    (me: ObservableValue[A, J])
+    : Monad.AllOps[ObservableValueM, A] = {
+    Monad.ops.toAllMonadOps(me.erase)
+  }
+
   implicit class ObservableValueExistentialSyntax[A, J](val self: ObservableValue[A, J]) extends AnyVal {
     @inline def erase: ObservableValueM[A] = self
-    @inline def M : ObservableValueM[A] = self
   }
 
   implicit class ObservableValue1Syntax[A](self: ObservableValueM[A]) {

@@ -10,7 +10,7 @@ lazy val monix    = project.settings(commonSettings)
 lazy val controls = project.settings(commonSettings)
 
 Project.inThisBuild(Seq(
-  version := "0.0.9",
+  version := "0.0.10",
   organization := "com.github.oleg-py",
   isSnapshot := true,
   scalaVersion := "2.11.8"
